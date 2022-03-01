@@ -1,9 +1,11 @@
-/*
-https://jinggengjcq-isv.isvjcloud.com/fronth5/#/pages/unitedCardNew20220123/unitedCardNew20220123?actId=b2d6a99babf64595aac5_220123
-10-29 11-3
+/**
+粉丝联盟福利社
 cron 30 0 * * *
-*/
-const $ = new Env("大牌联合");
+12.1 - 12.12
+https://lzdz1-isv.isvjcloud.com/dingzhi/shop/league/activity/6758593?activityId=dz211122100001616201shop&shareUuid=6579dde1e3b34091baecb2cd4381786f
+**/
+
+const $ = new Env("粉丝联盟福利社");
 const jdCookieNode = $.isNode() ? require('./jdCookie.js') : '';
 const notify = $.isNode() ? require('./sendNotify') : '';
 let cookiesArr = [], cookie = '', message = '';
@@ -23,10 +25,18 @@ if ($.isNode()) {
     cookiesArr = cookiesArr.filter(item => !!item);
 }
 !(async () => {
+    $.getAuthorCodeListerr = false
     if (!cookiesArr[0]) {
         $.msg($.name, '【提示】请先获取京东账号一cookie\n直接使用NobyDa的京东签到获取', 'https://bean.m.jd.com/bean/signIndex.action', { "open-url": "https://bean.m.jd.com/bean/signIndex.action" });
         return;
     }
+    
+    // authorCodeList = await getAuthorCodeList('https://gitee.com/fatelight/code/raw/master/lzdz1_league.json')
+    // if($.getAuthorCodeListerr === false){
+    //     authorCodeList = [
+    //         '6579dde1e3b34091baecb2cd4381786f',
+    //     ]
+    // }
     for (let i = 0; i < cookiesArr.length; i++) {
         if (cookiesArr[i]) {
             cookie = cookiesArr[i]
@@ -39,25 +49,23 @@ if ($.isNode()) {
             await checkCookie();
             console.log(`\n******开始【京东账号${$.index}】${$.nickName || $.UserName}*********\n`);
             if (!$.isLogin) {
-                $.msg($.name, `【提示】cookie已失效`, `京东账号${$.index} ${$.nickName || $.UserName}\n请重新登录获取\nhttps://bean.m.jd.com/bean/signIndex.action`, { "open-url": "https://bean.m.jd.com/bean/signIndex.action" });
-                if ($.isNode()) {
-                    // await notify.sendNotify(`${$.name}cookie已失效 - ${$.UserName}`, `京东账号${$.index} ${$.UserName}\n请重新登录获取cookie`);
-                }
+                console.log('更新ck');
                 continue
             }
             $.bean = 0;
             $.ADID = getUUID('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 1);
             $.UUID = getUUID('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
             authorCodeList = [
-                'f5OyTUSN6aX/yln92mgHXF4tLNYA4seuA67MOIYQxEk3Vl9+AVo4NF+tgyeIc6A6kdK3rLBQpEQH9V4tdrrh0w==',
+                'f59be451b3d24e219ceba8a35946e2c7',
             ]
-            $.appkey = "51B59BB805903DA4CE513D29EC448375"
-            $.userId = "10299171"
-            $.actId = "3f3e8af6b138460aa5ae_788"
             // $.authorCode = authorCodeList[random(0, authorCodeList.length)]
             $.authorCode = ownCode ? ownCode : authorCodeList[random(0, authorCodeList.length)]
-            console.log('去助力 -> '+$.authorCode);
-            await openCardNew();
+            $.authorNum = `${random(1000000, 9999999)}`
+            $.activityId = 'dz220221100001616201shop'
+            $.activityShopId = '1000074823'
+            $.activityUrl = `https://lzdz1-isv.isvjcloud.com/dingzhi/shop/league/activity?activityId=${$.activityId}&shareUuid=${encodeURIComponent($.authorCode)}&adsource=null&shareuserid4minipg=null&shopid=${$.activityShopId}&lng=00.000000&lat=00.000000&sid=&un_area=`
+            await superFans();
+
             if ($.bean > 0) {
                 message += `\n【京东账号${$.index}】${$.nickName || $.UserName} \n       └ 获得 ${$.bean} 京豆。`
             }
@@ -79,70 +87,108 @@ if ($.isNode()) {
     })
 
 
-async function openCardNew() {
+async function superFans() {
     $.token = null;
-    $.buyerNick = null;
-    $.activityInfo = null;
+    $.secretPin = null;
+    $.openCardActivityId = null
+    await getFirstLZCK()
     await getToken();
+    await task('dz/common/getSimpleActInfoVo', `activityId=${$.activityId}`, 1)
     if ($.token) {
-        await task('activity_load', {
-            "actId": $.actId,
-            "inviteNick": $.authorCode,
-            "jdToken": $.token,
-            "source": "01",
-        })
-        if ($.buyerNick) {
-            console.log('1.助力码 -> '+$.buyerNick)
-            if ($.index === 1) {
-                ownCode = $.buyerNick
-                console.log("后面的将给这个助力码助力 -> "+ownCode)
-            }
-            console.log('2.绑定助力 ->')
-            await task('complete/mission', {
-                "actId": $.actId,
-                "missionType": "relationBind",
-                "inviterNick": $.authorCode,
-            })
-            await task('shopList', {
-                "actId": $.actId,
-            })
-            console.log('3.关注店铺 ->')
-            await task('complete/mission', {
-                "actId": $.actId,
-                "missionType": "uniteCollectShop",
-            })
-            console.log('4.抽奖 ->')
-            await task('draw/post', {
-                "actId": $.actId,
-                "usedGameNum": "2",
-                "dataType": "draw",
-            })
-            console.log('5.加入会员 ->')
-            if ($.shopList) {
-                console.log('会员卡数量 -> '+$.shopList.length)
-                for (const vo of $.shopList) {
-                    $.log(`${vo.userId}`)
-                    if (!vo.open) {
-                        $.log("开通会员")
-                            await getShopOpenCardInfo(vo.userId)
-                            await bindWithVender(vo.userId)
-                            await task('complete/mission', {
-                                "actId": $.actId,
-                                "shopId": vo.userId,
-                                "missionType": "openCard",
-                            })
-                        await $.wait(3000)
-                    } else {
-                        $.log("已经是会员了")
-                    }
-                    // await $.wait(500)
+        await getMyPing();
+        if ($.secretPin) {
+            console.log("去助力 -> "+$.authorCode)
+            await task("taskact/common/drawContent", `activityId=${$.activityId}&pin=${encodeURIComponent($.secretPin)}`)
+            await task('common/accessLogWithAD', `venderId=${$.activityShopId}&code=99&pin=${encodeURIComponent($.secretPin)}&activityId=${$.activityId}&pageUrl=${$.activityUrl}&subType=app&adSource=null`, 1);
+            await task('wxActionCommon/getUserInfo', `pin=${encodeURIComponent($.secretPin)}`, 1)
+            await task('shop/league/activityContent', `activityId=${$.activityId}&pin=${encodeURIComponent($.secretPin)}&pinImg=${encodeURIComponent($.pinImg)}&nick=${encodeURIComponent($.pin)}&cjyxPin=&cjhyPin=&shareUuid=${encodeURIComponent($.authorCode)}`)
+            if ($.activityContent) {
+                await task('shop/league/checkOpenCard', `activityId=${$.activityId}&pin=${encodeURIComponent($.secretPin)}&shareUuid=${encodeURIComponent($.authorCode)}&actorUuid=${$.actorUuid}`)
+                $.log("\n关注店铺")
+                if (!$.activityContent['followShop'].allStatus) {
+                    await task('shop/league/saveTask', `activityId=${$.activityId}&pin=${encodeURIComponent($.secretPin)}&actorUuid=${$.actorUuid}&shareUuid=${encodeURIComponent($.authorCode)}&taskType=1&taskValue=1`)
+                } else {
+                    $.log("已经关注过了\n")
+                    await $.wait(2000);
+                    // return
                 }
+                $.log("\n加入店铺会员");
+                if ($.openCardStatus.cardList) {
+                    // console.log($.openCardStatus.cardList)
+                    taskList = $.openCardStatus.cardList.filter((x) => !x.status);
+                    console.log(taskList.length)
+                    for (const vo of taskList) {
+                        $.log(`去加入${vo.name}`);
+                        console.log(vo.value)
+                        if (vo.value === vo.value2) {
+                            await bindWithVender(
+                                {
+                                    venderId: `${vo.value}`,
+                                    bindByVerifyCodeFlag: 1,
+                                    registerExtend: {},
+                                    writeChildFlag: 0,
+                                    activityId: $.openCardActivityId,
+                                    channel: 401,
+                                },
+                                vo.value
+                            );
+                        } else {
+                            await bindWithVender(
+                                {
+                                    venderId: `${vo.value}`,
+                                    shopId: `${vo.value2}`,
+                                    bindByVerifyCodeFlag: 1,
+                                    registerExtend: {},
+                                    writeChildFlag: 0,
+                                    activityId: $.openCardActivityId,
+                                    channel: 401,
+                                },
+                                vo.value
+                            );
+                        }
+                        if ($.bindWithVendermessage === '活动太火爆，请稍后再试') {
+                            console.log("有漏卡,重新开卡,多查日志")
+                            console.log(vo.value)
+                            await bindWithVender(
+                                {
+                                    venderId: `${vo.value}`,
+                                    shopId: `${vo.value2}`,
+                                    bindByVerifyCodeFlag: 1,
+                                    registerExtend: {},
+                                    writeChildFlag: 0,
+                                    activityId: $.openCardActivityId,
+                                    channel: 401,
+                                },
+                                vo.value
+                            );
+                        }
+                        await $.wait(1000);
+                        await getFirstLZCK()
+                        await getToken();
+                        await task(
+                            "shop/league/checkOpenCard",
+                            `activityId=${$.activityId}&actorUuid=${$.actorUuid}&shareUuid=${$.authorCode
+                            }&pin=${encodeURIComponent($.secretPin)}`
+                        );
+                        await $.wait(1000);
+                    }
+                    await getFirstLZCK()
+                    await getToken();
+                    $.log("\n加入购物车")
+                    if (!$.activityContent['addSku'].allStatus) {
+                        await task('shop/league/saveTask', `activityId=${$.activityId}&pin=${encodeURIComponent($.secretPin)}&actorUuid=${$.actorUuid}&shareUuid=${encodeURIComponent($.authorCode)}&taskType=2&taskValue=2`)
+                    } else {
+                        $.log("已经加入过了\n")
+                    }
+
+                    $.log("\c抽奖")
+                    await task('shop/league/startDraw', `activityId=${$.activityId}&pin=${encodeURIComponent($.secretPin)}&actorUuid=${$.actorUuid}`)
+                } else {
+                    $.log("没有获取到对应的任务。\n");
+                }
+            } else {
+                $.log("无法顺利的获取到活动信息。")
             }
-            console.log('6.加入购物车 ->')
-            await task('complete/mission', {
-                "actId": $.actId,
-                "missionType": "uniteAddCart",
-            })
         } else {
             $.log("没有成功获取到用户信息")
         }
@@ -151,26 +197,9 @@ async function openCardNew() {
     }
 }
 
-function task(function_id, preParams) {
-    body = {
-        "jsonRpc": "2.0",
-        "params": {
-            "commonParameter": {
-                "appkey": $.appkey,
-                "m": "POST",
-                "timestamp": new Date(),
-                "userId": $.userId
-            },
-            "admJson": {
-                "method": `/openCardNew/${function_id}`,
-                "userId": $.userId,
-                "buyerNick": $.buyerNick ? $.buyerNick : ""
-            }
-        }
-    }
-    Object.assign(body.params.admJson, preParams)
+function task(function_id, body, isCommon = 0) {
     return new Promise(resolve => {
-        $.post(taskUrl(function_id, body), async (err, resp, data) => {
+        $.post(taskUrl(function_id, body, isCommon), async (err, resp, data) => {
             try {
                 if (err) {
                     $.log(err)
@@ -178,30 +207,65 @@ function task(function_id, preParams) {
 
                     if (data) {
                         data = JSON.parse(data);
-                        if (data.success) {
-                            if (data.data.status === 200) {
-                                switch (function_id) {
-                                    case 'activity_load':
-                                        $.buyerNick = data.data.data.buyerNick;
-                                        console.log("[ "+data.data.data.cusActivity.actName+" ]");
-                                        break;
-                                    case 'shopList':
-                                        $.shopList = data.data.data.cusShops;
-                                        break;
-                                    case 'complete/mission':
-                                        console.log(data.data.data.remark);
-                                        break;
-                                    case 'draw/post':
-                                        console.log(data.data.data.awardSetting.awardName);
-                                        break;
-                                    default:
-                                        break;
-                                }
+                        if (data.result) {
+                            switch (function_id) {
+                                case 'dz/common/getSimpleActInfoVo':
+                                    $.jdActivityId = data.data.jdActivityId;
+                                    $.venderId = data.data.venderId;
+                                    break;
+                                case 'wxActionCommon/getUserInfo':
+                                    if (data.data.yunMidImageUrl) {
+                                        // if ($.index === 1) {
+                                        //     ownCode['pinImg'] = data.data.yunMidImageUrl
+                                        //     ownCode['nickname'] = data.data.nickname
+                                        // }
+                                        $.pinImg = data.data.yunMidImageUrl
+                                    } else {
+                                        // if ($.index === 1) {
+                                        //     ownCode['pinImg'] = 'https://img10.360buyimg.com/imgzone/jfs/t1/7020/27/13511/6142/5c5138d8E4df2e764/5a1216a3a5043c5d.png'
+                                        //     ownCode['nickname'] = data.data.nickname
+                                        // }
+                                        $.pinImg = 'https://img10.360buyimg.com/imgzone/jfs/t1/7020/27/13511/6142/5c5138d8E4df2e764/5a1216a3a5043c5d.png'
+                                    }
+                                    break;
+                                case 'shop/league/activityContent':
+                                    if (!data.data.hasEnd) {
+                                        $.log(`开启【${data.data.activityName}】活动`)
+                                        $.log("-------------------")
+                                        if ($.index === 1) {
+                                            ownCode = data.data.actorUuid
+                                            console.log("你的助力码 -> "+ownCode)
+                                        }
+                                        $.activityContent = data.data;
+                                        $.actorUuid = data.data.actorUuid;
+                                    } else {
+                                        $.log("活动已经结束");
+                                    }
+                                    break;
+                                case 'shop/league/checkOpenCard':
+                                    $.openCardStatus = data.data;
+                                    break;
+                                case 'shop/league/startDraw':
+                                    console.log(data.data)
+                                    break;
+                                case 'shop/league/saveTask':
+                                    if (data.data) {
+                                        if (data.data.addBeanNum) {
+                                            $.bean += data.data.addBeanNum;
+                                            $.log(`获得【${data.data.addBeanNum}】京豆\n`)
+                                        }
+                                        if (data.data.addScore) {
+                                            $.log(`获得【${data.data.addScore}】积分\n`)
+                                        }
+                                    }
+                                    break;
+                                default:
+                                    $.log(JSON.stringify(data))
+                                    break;
                             }
+                        } else {
+                            $.log(JSON.stringify(data))
                         }
-
-                    } else {
-                        $.log("京东没有返回数据")
                     }
                 }
             } catch (error) {
@@ -212,9 +276,9 @@ function task(function_id, preParams) {
         })
     })
 }
-function getShopOpenCardInfo(venderId) {
+function getShopOpenCardInfo(body, venderId) {
     let opt = {
-        url: `https://api.m.jd.com/client.action?appid=jd_shop_member&functionId=getShopOpenCardInfo&body=${encodeURIComponent(JSON.stringify({ venderId: venderId, channel: 401 }))}&client=H5&clientVersion=9.2.0&uuid=88888`,
+        url: `https://api.m.jd.com/client.action?appid=jd_shop_member&functionId=getShopOpenCardInfo&body=${encodeURIComponent(JSON.stringify(body))}&client=H5&clientVersion=9.2.0&uuid=88888`,
         headers: {
             Host: 'api.m.jd.com',
             Accept: '*/*',
@@ -222,7 +286,7 @@ function getShopOpenCardInfo(venderId) {
             Cookie: cookie,
             'User-Agent': `jdapp;iPhone;9.5.4;13.6;${$.UUID};network/wifi;ADID/${$.ADID};model/iPhone10,3;addressid/0;appBuild/167668;jdSupportDarkMode/0;Mozilla/5.0 (iPhone; CPU iPhone OS 13_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148;supportJDSHWK/1`,
             'Accept-Language': 'zh-cn',
-            Referer: `https://shopmember.m.jd.com/shopcard/?venderId=${venderId}}&channel=401&returnUrl=${encodeURIComponent('https://jinggengjcq-isv.isvjcloud.com/fronth5')}`,
+            Referer: `https://shopmember.m.jd.com/shopcard/?venderId=${venderId}}&channel=801&returnUrl=${encodeURIComponent($.activityUrl)}`,
             'Accept-Encoding': 'gzip, deflate, br'
         }
     }
@@ -248,9 +312,9 @@ function getShopOpenCardInfo(venderId) {
 
     })
 }
-function bindWithVender(venderId) {
+function bindWithVender(body, venderId) {
     let opt = {
-        url: `https://api.m.jd.com/client.action?appid=jd_shop_member&functionId=bindWithVender&body=${encodeURIComponent(JSON.stringify({ "venderId": venderId, "bindByVerifyCodeFlag": 1, "registerExtend": {}, "writeChildFlag": 0, "channel": 401 }))}&client=H5&clientVersion=9.2.0&uuid=88888`,
+        url: `https://api.m.jd.com/client.action?appid=jd_shop_member&functionId=bindWithVender&body=${encodeURIComponent(JSON.stringify(body))}&client=H5&clientVersion=9.2.0&uuid=88888`,
         headers: {
             Host: 'api.m.jd.com',
             Accept: '*/*',
@@ -258,7 +322,7 @@ function bindWithVender(venderId) {
             Cookie: cookie,
             'User-Agent': `jdapp;iPhone;9.5.4;13.6;${$.UUID};network/wifi;ADID/${$.ADID};model/iPhone10,3;addressid/0;appBuild/167668;jdSupportDarkMode/0;Mozilla/5.0 (iPhone; CPU iPhone OS 13_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148;supportJDSHWK/1`,
             'Accept-Language': 'zh-cn',
-            Referer: `https://shopmember.m.jd.com/shopcard/?venderId=${venderId}}&channel=401&returnUrl=${encodeURIComponent('https://jinggengjcq-isv.isvjcloud.com/fronth5')}`,
+            Referer: `https://shopmember.m.jd.com/shopcard/?venderId=${venderId}}&channel=801&returnUrl=${encodeURIComponent($.activityUrl)}`,
             'Accept-Encoding': 'gzip, deflate, br'
         }
     }
@@ -270,7 +334,16 @@ function bindWithVender(venderId) {
                 } else {
                     res = JSON.parse(data)
                     if (res.success) {
-                        console.log("开卡成功")
+                        console.log(res)
+                        $.bindWithVendermessage = res.message
+                        // if (res.result.giftInfo && res.result.giftInfo.giftList) {
+                        //     for (const vo of res.result.giftInfo.giftList) {
+                        //         if (vo.prizeType === 4) {
+                        //             $.log(`获得【${vo.quantity}】京豆`)
+                        //             $.bean += vo.quantity
+                        //         }
+                        //     }
+                        // }
                     }
                 }
             } catch (error) {
@@ -282,23 +355,23 @@ function bindWithVender(venderId) {
 
     })
 }
-function taskUrl(function_id, body) {
+function taskUrl(function_id, body, isCommon) {
     return {
-        url: `https://jinggengjcq-isv.isvjcloud.com/dm/front/openCardNew/${function_id}?&mix_nick=${$.buyerNick ? $.buyerNick : ""}`,
+        url: isCommon ? `https://lzdz1-isv.isvjcloud.com/${function_id}` : `https://lzdz1-isv.isvjcloud.com/dingzhi/${function_id}`,
         headers: {
-            Host: 'jinggengjcq-isv.isvjcloud.com',
+            Host: 'lzdz1-isv.isvjcloud.com',
             Accept: 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             'Accept-Language': 'zh-cn',
             'Accept-Encoding': 'gzip, deflate, br',
-            'Content-Type': 'application/json; charset=utf-8',
-            Origin: 'https://jinggengjcq-isv.isvjcloud.com',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Origin: 'https://lzdz1-isv.isvjcloud.com',
             'User-Agent': `jdapp;iPhone;9.5.4;13.6;${$.UUID};network/wifi;ADID/${$.ADID};model/iPhone10,3;addressid/0;appBuild/167668;jdSupportDarkMode/0;Mozilla/5.0 (iPhone; CPU iPhone OS 13_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148;supportJDSHWK/1`,
             Connection: 'keep-alive',
-            Referer: 'https://jinggengjcq-isv.isvjcloud.com/fronth5/',
+            Referer: $.activityUrl,
             Cookie: cookie
         },
-        body: JSON.stringify(body)
+        body: body
 
     }
 }
@@ -361,6 +434,8 @@ function getMyPing() {
                         } else {
                             $.log(data.errorMessage)
                         }
+                    } else {
+                        $.log("京东返回了空数据")
                     }
                 }
             } catch (error) {
@@ -369,6 +444,32 @@ function getMyPing() {
                 resolve();
             }
 
+        })
+    })
+}
+
+function getAuthorCodeList(url) {
+    return new Promise(resolve => {
+        const options = {
+            url: `${url}?${new Date()}`, "timeout": 10000, headers: {
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/87.0.4280.88"
+            }
+        };
+        $.get(options, async (err, resp, data) => {
+            try {
+                if (err) {
+                    // $.log(err)
+                    $.getAuthorCodeListerr = false
+                } else {
+                if (data) data = JSON.parse(data)
+                    $.getAuthorCodeListerr = true
+                }
+            } catch (e) {
+                $.logErr(e, resp)
+                data = null;
+            } finally {
+                resolve(data);
+            }
         })
     })
 }
@@ -408,29 +509,6 @@ function getFirstLZCK() {
                 console.log(error)
             } finally {
                 resolve();
-            }
-        })
-    })
-}
-function getAuthorCodeList(url) {
-    return new Promise(resolve => {
-        const options = {
-            url: `${url}?${new Date()}`, "timeout": 10000, headers: {
-            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/87.0.4280.88"
-            }
-        };
-        $.get(options, async (err, resp, data) => {
-            try {
-                if (err) {
-                    $.log(err)
-                } else {
-                if (data) data = JSON.parse(data)
-                }
-            } catch (e) {
-                $.logErr(e, resp)
-                data = null;
-            } finally {
-                resolve(data);
             }
         })
     })
