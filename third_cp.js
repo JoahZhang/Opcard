@@ -19,13 +19,14 @@ if ($.isNode()) {
 
 
     //活动ID 
-    $.activityId = "7817ded305644dc7901b9c087862e0b3"
+    if (process.env.jd_zdjr_activityId)
+        activityId = process.env.jd_zdjr_activityId;
     $.ShareNum = 0;
     $.s_user = 0;
-    $.inviter = 'at88ou9rb+CbYoub4WUZJFhXBmEZA6lSVT+72G8p/fVoLg2u1PPhDKnKIGiyllSk';
+    $.inviter = 'a9IK60Pks4gy5pUyT/wYsDuj3FbvupX+LJ9NFD6Kh58Jah8sXZOcx4hozgiV81Rt697ulbLIDOIodMQ2RvALQQ==';
     $.activityUrl = `https://cjhydz-isv.isvjcloud.com/microDz/invite/activity/wx/view/index/${random(1000000, 9999999)}?activityId=${$.activityId}&inviter=${$.inviter}`
     console.log(`活动地址：${$.activityUrl}`)
-    for (let i = 0; i < cookiesArr.length; i++) {
+    for (let i = 10; i < cookiesArr.length; i++) {
         if (cookiesArr[i]) {
             cookie = cookiesArr[i];
             $.UserName = decodeURIComponent(cookie.match(/pt_pin=([^; ]+)(?=;?)/) && cookie.match(/pt_pin=([^; ]+)(?=;?)/)[1])
