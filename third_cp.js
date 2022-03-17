@@ -26,7 +26,7 @@ if ($.isNode()) {
     $.inviter = 'at88ou9rb+CbYoub4WUZJFhXBmEZA6lSVT+72G8p/fVoLg2u1PPhDKnKIGiyllSk';
     $.activityUrl = `https://cjhydz-isv.isvjcloud.com/microDz/invite/activity/wx/view/index/${random(1000000, 9999999)}?activityId=${$.activityId}&inviter=${$.inviter}`
     console.log(`活动地址：${$.activityUrl}`)
-    for (let i = 10; i < cookiesArr.length; i++) {
+    for (let i = 0; i < cookiesArr.length; i++) {
         if (cookiesArr[i]) {
             cookie = cookiesArr[i];
             $.UserName = decodeURIComponent(cookie.match(/pt_pin=([^; ]+)(?=;?)/) && cookie.match(/pt_pin=([^; ]+)(?=;?)/)[1])
