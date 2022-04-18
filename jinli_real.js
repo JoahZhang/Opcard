@@ -4,7 +4,7 @@
 接入了代理 https://www.xiequ.cn/ 可以去嫖携趣的 每日1000免费ip 选择1个ip txt文本返回即可
 备注：高速并发请求，专治偷助力。在kois环境变量中填入需要助力的pt_pin，有多个请用@符号连接
 TG学习交流群：https://t.me/cdles
-5 0 * * * https://raw.githubusercontent.com/cdle/jd_study/main/jd_angryKoi.js
+cron 5 0 * * * https://raw.githubusercontent.com/cdle/jd_study/main/jd_angryKoi.js
 由Quiet修改
 */
 const $ = new Env("愤怒的锦鲤");
