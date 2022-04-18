@@ -1,34 +1,30 @@
 /*
 愤怒的锦鲤
-更新时间：2021-3-19
-接入了代理 https://www.xiequ.cn/ 可以去嫖携趣的 每日1000免费ip 选择1个ip txt文本返回即可
+更新时间：2021-7-11
 备注：高速并发请求，专治偷助力。在kois环境变量中填入需要助力的pt_pin，有多个请用@符号连接
 TG学习交流群：https://t.me/cdles
-cron 5 0 * * * https://raw.githubusercontent.com/cdle/jd_study/main/jd_angryKoi.js
-由Quiet修改
+5 0 * * * https://raw.githubusercontent.com/cdle/jd_study/main/jd_angryKoi.js
 */
 const $ = new Env("愤怒的锦鲤");
 const JD_API_HOST = "https://api.m.jd.com/client.action";
-const ua = `jdltapp;iPhone;3.1.0;${Math.ceil(
-  Math.random() * 4 + 10
-)}.${Math.ceil(Math.random() * 4)};${randomString(40)}`;
-var kois = process.env.kois ? process.env.kois : ''; // 需要助力的pin
-let proxyUrl = ""; // 代理的api地址
+const ua = `Mozilla/5.0 (Linux; U; Android 8.1.0; zh-cn; BLA-AL00 Build/HUAWEIBLA-AL00) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.132 MQQBrowser/8.9 Mobile Safari/537.36`;
+var kois = ""; // 需要助力的pin
 let cookiesArr = [];
 let random = 0;
 let log = "";
 let proxy = "";
+let proxyUrl = ""; // 代理的api地址
 let nums = 0;
 var helps = [];
 var tools = [];
-let ts = ''
+let openRedEnvelope = []
 const CryptoJS = require("crypto-js");
 const key = CryptoJS.enc.Utf8.parse("2djshdncjdsa9584");
 const iv = CryptoJS.enc.Utf8.parse("dcmdskdijnhfy65s");
 require("global-agent/bootstrap");
 let urlRex =
   /[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?/g;
-global.GLOBAL_AGENT.NO_PROXY = `${urlRex.exec(proxyUrl)[0]},log.catttt.com`;
+global.GLOBAL_AGENT.NO_PROXY = `${urlRex.exec(proxyUrl)[0]},ka.txmmp.cn`;
 !(async () => {
   if (!kois) {
     console.log("请在环境变量中填写需要助力的账号");
@@ -37,7 +33,7 @@ global.GLOBAL_AGENT.NO_PROXY = `${urlRex.exec(proxyUrl)[0]},log.catttt.com`;
   await requireConfig();
   for (let i in cookiesArr) {
     cookie = cookiesArr[i];
-    ts = cookiesArr[i];
+    openRedEnvelope.push(cookiesArr[i])
     if (
       kois.indexOf(
         cookie.match(/pt_pin=([^; ]+)(?=;?)/) &&
@@ -99,6 +95,7 @@ global.GLOBAL_AGENT.NO_PROXY = `${urlRex.exec(proxyUrl)[0]},log.catttt.com`;
 
   for (let help of helps) {
     open(help);
+    console.log(global.GLOBAL_AGENT);
   }
   await $.wait(1000);
 })()
@@ -112,16 +109,15 @@ global.GLOBAL_AGENT.NO_PROXY = `${urlRex.exec(proxyUrl)[0]},log.catttt.com`;
 
 async function open(help) {
   var num = "";
+  if (nums % 8 == 0) {
+    await getLog();
+    await getProxy();
+    global.GLOBAL_AGENT.HTTP_PROXY = "http://" + proxy;
+  }
+  nums++;
   var tool = tools.pop();
   if (!tool) return;
   if (help.success) return;
-  if (nums % 8 == 0) {
-    await getProxy();
-    await getLog();
-    global.GLOBAL_AGENT.HTTP_PROXY = "http://" + proxy;
-  }
-
-  nums++;
   requestApi("jinli_h5assist", tool.cookie, {
     redPacketId: help.redPacketId,
     followShop: 0,
@@ -133,6 +129,7 @@ async function open(help) {
     if (desc && desc.indexOf("助力已满") != -1) {
       tools.unshift(tool);
       help.success = true;
+      openRed(openRedEnvelope[0])
     } else if (!data) {
       tools.unshift(tool);
     }
@@ -198,25 +195,20 @@ function requireConfig() {
   });
 }
 // 获取log
-function getLog(tool) {
-  if (tool) {
-    ts = tool
-  }
+function getLog() {
   return new Promise(async (resolve) => {
     $.get(
       {
-        url: "http://129.226.101.167:6543/log",
+        url: "https://ka.txmmp.cn/log",
         timeout: {
           request: 5000,
         },
       },
       (err, data) => {
-
         try {
-          let state = JSON.parse(data.body)[0];
-
+          let state = JSON.parse(data.body);
           random = state.random;
-          log = Decrypt(state.log);
+          log = state.log
         } catch (e) {
         } finally {
           resolve();
@@ -224,6 +216,22 @@ function getLog(tool) {
       }
     );
   });
+}
+async function openRed(cookie) {
+  try {
+    for (let index = 0; index < 8; index++) {
+      const { data } = await requestApi("h5receiveRedpacketAll", cookie, {
+        random: random,
+        log: log,
+        sceneid: "JLHBhPageh5",
+      });
+      console.log(`${data.biz_msg}:${data.result.discount}`);
+      $.wait(1500)
+    }
+    $.done();
+  } catch (error) {
+
+  }
 }
 // 获取代理
 function getProxy() {
